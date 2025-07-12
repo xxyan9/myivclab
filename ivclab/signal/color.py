@@ -25,15 +25,6 @@ def rgb2ycbcr(image: np.array):
     output_image = np.zeros_like(image)
 
     # YOUR CODE STARTS HERE
-    # input_img = image.copy()
-    # transform_matrix = np.array([
-    #     [0.299, 0.587, 0.114],
-    #     [-0.169, -0.331, 0.5],
-    #     [0.5, -0.419, -0.0813]
-    # ])
-    # shift = np.array([0, 128, 128])
-    # output_image = input_img @ transform_matrix.T + shift  # Matrix multiplication and bias
-
     r = image[..., 0].astype(np.float32)
     g = image[..., 1].astype(np.float32)
     b = image[..., 2].astype(np.float32)
@@ -43,6 +34,7 @@ def rgb2ycbcr(image: np.array):
     output_image[..., 1] = -0.169 * r - 0.331 * g + 0.5 * b  # Cb
     output_image[..., 2] = 0.5 * r - 0.419 * g - 0.081 * b  # Cr
     # YOUR CODE ENDS HERE
+
     return output_image
 
 def ycbcr2rgb(image: np.array):
@@ -57,24 +49,6 @@ def ycbcr2rgb(image: np.array):
     output_image = np.zeros_like(image)
 
     # YOUR CODE STARTS HERE
-    # input_img = image.copy()
-    # input_img[:, :, 1:] -= 128.0  # Subtract the Cb and Cr offsets
-    # transform_matrix = np.array([
-    #     [1.0, 0.0, 1.402],
-    #     [1.0, -0.344, -0.714],
-    #     [1.0, 1.772, 0.0]
-    # ])
-
-    # # Reshape the image to [H*W, 3]
-    # h, w = input_img.shape[:2]
-    # flat = input_img.reshape(-1, 3)  # shape: [H*W, 3]
-
-    # rgb_flat = flat @ transform_matrix.T  # shape: [H*W, 3]
-
-    # rgb = rgb_flat.reshape(h, w, 3)
-    # output_image = np.clip(rgb, 0, 255)
-
-    # Convert to float for calculation
     y = image[..., 0].astype(np.float32)
     cb = image[..., 1].astype(np.float32)
     cr = image[..., 2].astype(np.float32)
@@ -86,7 +60,6 @@ def ycbcr2rgb(image: np.array):
     
     # Clip values to valid range [0, 255]
     output_image = np.clip(output_image, 0, 255)
-
     # YOUR CODE ENDS HERE
 
     return output_image
