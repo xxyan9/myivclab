@@ -47,7 +47,7 @@ class VideoCodec:
             ref_ycbcr = rgb2ycbcr(self.decoder_recon)
 
             # Motion vector computation
-            motion_vector = self.motion_comp.compute_motion_vector(curr_ycbcr[..., 0], ref_ycbcr[..., 0])
+            motion_vector = self.motion_comp.compute_motion_vector(ref_ycbcr[..., 0], curr_ycbcr[..., 0])
 
             # Perform motion compensation
             recon_pred_frame_ycbcr = self.motion_comp.reconstruct_with_motion_vector(ref_ycbcr, motion_vector)
@@ -83,11 +83,6 @@ class VideoCodec:
 
             # Convert to RGB
             self.decoder_recon = ycbcr2rgb(recon_frame_ycbcr).copy()
-
-            ##############################
-            plt.imshow(self.decoder_recon)
-            plt.show()
-            ##############################
 
             bitstream = (motion_stream, residual_stream)
         # YOUR CODE ENDS HERE

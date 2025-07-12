@@ -14,8 +14,7 @@ for i in range(20, 40 + 1):
 all_bpps = list()
 all_psnrs = list()
 
-# for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
-for q_scale in [1.0]:
+for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
     video_codec = VideoCodec(quantization_scale=q_scale)
     video_codec.intra_codec.train_huffman_from_image(lena_small, is_source_rgb=True)
     bpps = list()
@@ -72,10 +71,10 @@ for q_scale in [0.15, 0.3, 0.7, 1.0, 1.5, 3, 5, 7, 10]:
 ch3_bpps = np.array(all_bpps)
 ch3_psnrs = np.array(all_PSNRs)
 
-# ch3_bpps = np.load('../data/ch3_bpps.npy')
-# ch3_psnrs = np.load('../data/ch3_psnrs.npy')
-# ch4_bpps = np.load('../data/ch4_bpps.npy')
-# ch4_psnrs = np.load('../data/ch4_psnrs.npy')
+ch3_bpps = np.load('../data/ch3_bpps.npy')
+ch3_psnrs = np.load('../data/ch3_psnrs.npy')
+ch4_bpps = np.load('../data/ch4_bpps.npy')
+ch4_psnrs = np.load('../data/ch4_psnrs.npy')
 
 plt.figure()
 plt.xlabel('Bitrate (bpp)')
