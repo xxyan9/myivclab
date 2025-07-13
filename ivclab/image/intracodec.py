@@ -75,7 +75,7 @@ class IntraCodec:
         reconstructed_img = self.patcher.unpatch(idct_patches)
 
         # # Convert back to RGB
-        # reconstructed_img = ycbcr2rgb(reconstructed_img)
+        #reconstructed_img = ycbcr2rgb(reconstructed_img)
         # YOUR CODE ENDS HERE
 
         return reconstructed_img
