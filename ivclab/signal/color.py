@@ -62,4 +62,4 @@ def ycbcr2rgb(image: np.array):
     output_image = np.clip(output_image, 0, 255)
     # YOUR CODE ENDS HERE
 
-    return output_image
+    return output_image.astype(np.uint8)
