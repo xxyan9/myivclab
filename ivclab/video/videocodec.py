@@ -6,6 +6,7 @@ from ivclab.signal import rgb2ycbcr, ycbcr2rgb
 from ivclab.video import MotionCompensator
 from ivclab.utils import calc_psnr
 import matplotlib.pyplot as plt
+from exercises.ch5 import deblock
 
 
 class VideoCodec:
@@ -37,8 +38,14 @@ class VideoCodec:
             # ---Intra mode---
             bitstream, residual_bitsize = self.intra_codec.intra_encode(frame, return_bpp=True)
             self.decoder_recon = self.intra_codec.intra_decode(bitstream, frame.shape)
+
+            # === Chapter 5-1: In-loop deblocking filter ===
+            qp_index = self.qscale_to_qp_index(self.quantization_scale)
+            filtered_ycbcr = deblock.deblock(self.decoder_recon, qp_index)
+            # ==============================================
+
             # Convert to RGB
-            self.decoder_recon = ycbcr2rgb(self.decoder_recon)
+            self.decoder_recon = ycbcr2rgb(filtered_ycbcr)
             motion_bitsize = 0  # No motion in intra frame
         else:
             # ---Inter mode---
@@ -81,8 +88,16 @@ class VideoCodec:
             residual_recon = self.residual_codec.intra_decode(residual_stream, frame.shape)
             recon_frame_ycbcr = recon_pred_frame_ycbcr_docoded + residual_recon
 
+            # === Chapter 5-1: In-loop deblocking filter ===
+            # Compute quantization index for deblocking
+            qp_index = self.qscale_to_qp_index(self.quantization_scale)
+
+            # Apply in-loop deblocking filter
+            filtered_recon_frame_ycbcr = deblock.deblock(recon_frame_ycbcr, qp_index)
+            # ==============================================
+
             # Convert to RGB
-            self.decoder_recon = ycbcr2rgb(recon_frame_ycbcr).copy()
+            self.decoder_recon = ycbcr2rgb(filtered_recon_frame_ycbcr).copy()
 
             bitstream = (motion_stream, residual_stream)
         # YOUR CODE ENDS HERE
@@ -90,3 +105,11 @@ class VideoCodec:
         bitsize = residual_bitsize + motion_bitsize
         return self.decoder_recon, bitstream, bitsize
 
+    def qscale_to_qp_index(self, q_scale):
+        """
+        Convert quantization_scale into the QP index used in
+        standard video compression to look up the alpha_table and
+        beta_table to determine the strength of deblocking filtering.
+        """
+        qp = int(round(6 * np.log2(q_scale)))
+        return np.clip(qp, 0, 51)
