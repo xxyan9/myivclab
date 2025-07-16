@@ -1,16 +1,18 @@
 import numpy as np
 
 # Alpha and Beta tables (from H.264 standard, QP index 0~51)
-alpha_table = [
+alpha_table = np.array([
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 4, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 17, 20, 22, 25, 28,
     32, 36, 40, 45, 50, 56, 63, 71, 80, 90, 101, 113, 127, 144, 162, 182, 203, 226, 255, 255
-]
-beta_table = [
+])
+
+beta_table = np.array([
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 6, 6, 7, 7, 8, 8,
     9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18
-]
+])
+
 
 def deblock(img_ycbcr: np.ndarray, index: int) -> np.ndarray:
     """
@@ -23,8 +25,8 @@ def deblock(img_ycbcr: np.ndarray, index: int) -> np.ndarray:
     H, W, C = img.shape
     blk = 8
 
-    alpha = alpha_table[index]
-    beta = beta_table[index]
+    alpha = alpha_table[index]  # Threshold for luminance difference of the boundary
+    beta = beta_table[index]    # Threshold for difference within the boundary
 
     def filter_edge(p, q):
         diff1 = abs(p[0] - q[0])
@@ -43,7 +45,7 @@ def deblock(img_ycbcr: np.ndarray, index: int) -> np.ndarray:
                 q[1] = (q[2] + q[1] + q[0] + p[0] + 2) / 4
                 q[2] = (2*q[3] + 3*q[2] + q[1] + q[0] + p[0] + 4) / 8
             else:
-                # Weak deblocking
+                # Weak deblocking (only smooth boundary pixels)
                 p[0] = (2*p[1] + p[0] + q[1] + 2) / 4
                 q[0] = (2*q[1] + q[0] + p[1] + 2) / 4
 
@@ -73,11 +75,10 @@ def deblock(img_ycbcr: np.ndarray, index: int) -> np.ndarray:
                     left[k, -3:] = p[1:]
                     right[k, :3] = q[:3]
 
-    return np.clip(img_ycbcr, 0, 255)
+    # return np.clip(img_ycbcr, 0, 255)
+    return img
 
 if __name__ == "__main__":
-    import numpy as np
-
     from ivclab import ycbcr2rgb
     from ivclab.image import IntraCodec
     from ivclab.utils import imread, calc_psnr
@@ -117,6 +118,8 @@ if __name__ == "__main__":
     all_bpps = np.array(all_bpps)
     all_PSNRs = np.array(all_PSNRs)
 
+    np.save('../data/ch5_bpps.npy', all_bpps)
+    np.save('../data/ch5_psnrs.npy', all_PSNRs)
 
     print(all_bpps, all_PSNRs)
     plt.plot(all_bpps, all_PSNRs, marker='o')
