@@ -46,7 +46,6 @@ all_bpps = list()
 all_PSNRs = list()
 
 for q_scale in [0.15, 0.3, 0.7, 1.0, 1.5, 3, 5, 7, 10]:
-# for q_scale in [1.0]:
     intracodec = IntraCodec(quantization_scale=q_scale)
     intracodec.train_huffman_from_image(lena_small)
     image_psnrs = list()
@@ -61,7 +60,7 @@ for q_scale in [0.15, 0.3, 0.7, 1.0, 1.5, 3, 5, 7, 10]:
         bpp = bitrate / (H * W)
         image_psnrs.append(psnr)
         image_bpps.append(bpp)
-        print(f"Frame:{i} PSNR: {psnr:.2f} dB bpp: {bpp:.2f}")
+
     psnr = np.mean(image_psnrs)
     bpp = np.mean(image_bpps)
     all_bpps.append(bpp)
