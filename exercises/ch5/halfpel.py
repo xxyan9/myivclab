@@ -9,35 +9,24 @@ import matplotlib.pyplot as plt
 
 
 class HalfPelMotionCompensator:
-    """
-    Half-pixel motion compensator for both encoding and decoding
-    """
 
     def __init__(self, search_range=4):
         self.search_range = search_range
         self.integer_mc = MotionCompensator(search_range=search_range)
 
     def get_half_pel_block(self, image, ref_x, ref_y, block_h, block_w):
-        """
-        按需计算半像素块 (替代create_half_pel_image)
-        根据参考位置计算8x8块的半像素值
-        """
         h, w = image.shape
 
-        # 检查边界
         if (ref_x < 0 or ref_y < 0 or
                 ref_x + block_w > w or ref_y + block_h > h):
             return np.zeros((block_h, block_w), dtype=np.float32)
 
-        # 获取整数和小数部分
         int_x, int_y = int(ref_x), int(ref_y)
         frac_x, frac_y = ref_x - int_x, ref_y - int_y
 
-        # 如果是整数位置，直接返回
         if frac_x == 0 and frac_y == 0:
             return image[int_y:int_y + block_h, int_x:int_x + block_w].astype(np.float32)
 
-        # 需要插值的情况
         ref_block = np.zeros((block_h, block_w), dtype=np.float32)
 
         for y in range(block_h):
@@ -49,27 +38,18 @@ class HalfPelMotionCompensator:
         return ref_block
 
     def bilinear_interpolation(self, image, x, y):
-        """
-        双线性插值 (解码端使用)
-        用于根据分数运动向量重建像素值
-        """
         h, w = image.shape
 
-        # 边界检查 - 更严格的边界处理
         if x < 0 or y < 0 or x >= w - 1 or y >= h - 1:
-            # 边界外使用边界像素值
             x = max(0, min(x, w - 1))
             y = max(0, min(y, h - 1))
             return image[int(y), int(x)]
 
-        # 获取整数部分
         x1, y1 = int(x), int(y)
         x2, y2 = min(x1 + 1, w - 1), min(y1 + 1, h - 1)
 
-        # 获取小数部分
         fx, fy = x - x1, y - y1
 
-        # 双线性插值
         result = (1 - fx) * (1 - fy) * image[y1, x1] + \
                  fx * (1 - fy) * image[y1, x2] + \
                  (1 - fx) * fy * image[y2, x1] + \
@@ -78,27 +58,21 @@ class HalfPelMotionCompensator:
         return result
 
     def block_matching_hierarchical(self, current_block, reference_image, loc_x, loc_y):
-        """
-        分层搜索：先整数后半像素 (基于MATLAB版本的思路)
-        """
         block_h, block_w = current_block.shape
         h, w = reference_image.shape
 
-        # Step 1: 整数像素搜索 (±4范围)
         min_ssd = float('inf')
         best_int_x, best_int_y = loc_x, loc_y
 
         for ref_x in range(loc_x - self.search_range, loc_x + self.search_range + 1):
-            if ref_x < 0 or ref_x > w - block_w:  # 边界检查
+            if ref_x < 0 or ref_x > w - block_w:
                 continue
             for ref_y in range(loc_y - self.search_range, loc_y + self.search_range + 1):
-                if ref_y < 0 or ref_y > h - block_h:  # 边界检查
+                if ref_y < 0 or ref_y > h - block_h:
                     continue
 
-                # 当前参考块
                 ref_block = reference_image[ref_y:ref_y + block_h, ref_x:ref_x + block_w]
 
-                # 计算SSD (与MATLAB保持一致)
                 diff = (current_block.astype(np.float32) - ref_block.astype(np.float32)) ** 2
                 ssd = np.sum(diff)
 
@@ -106,11 +80,9 @@ class HalfPelMotionCompensator:
                     min_ssd = ssd
                     best_int_x, best_int_y = ref_x, ref_y
 
-        # Step 2: 半像素搜索 (在最佳整数位置周围搜索8个半像素位置)
-        # 定义8个半像素搜索位置 (包括MATLAB的4个 + 4个边中点)
         half_pel_patterns = [
-            (-0.5, -0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5),  # MATLAB的4个角点
-            (-0.5, 0.0), (0.5, 0.0), (0.0, -0.5), (0.0, 0.5)  # 4个边中点
+            (-0.5, -0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5),
+            (-0.5, 0.0), (0.5, 0.0), (0.0, -0.5), (0.0, 0.5)
         ]
 
         final_best_x, final_best_y = best_int_x, best_int_y
@@ -120,15 +92,12 @@ class HalfPelMotionCompensator:
             new_ref_x = best_int_x + dx
             new_ref_y = best_int_y + dy
 
-            # 边界检查
             if (new_ref_x < 0 or new_ref_y < 0 or
                     new_ref_x + block_w > w or new_ref_y + block_h > h):
                 continue
 
-            # 获取半像素参考块
             new_ref_block = self.get_half_pel_block(reference_image, new_ref_x, new_ref_y, block_h, block_w)
 
-            # 计算SSD
             diff = (current_block.astype(np.float32) - new_ref_block) ** 2
             ssd = np.sum(diff)
 
@@ -136,20 +105,15 @@ class HalfPelMotionCompensator:
                 final_min_ssd = ssd
                 final_best_x, final_best_y = new_ref_x, new_ref_y
 
-        # 计算相对运动向量
         mv_x = final_best_x - loc_x
         mv_y = final_best_y - loc_y
 
         return (mv_x, mv_y), final_min_ssd
 
     def compute_motion_vector_half_pel(self, reference_frame, current_frame):
-        """
-        计算半像素精度的运动向量 (使用分层搜索)
-        """
         h, w = current_frame.shape
-        block_h, block_w = 8, 8  # 使用8x8块
+        block_h, block_w = 8, 8
 
-        # 计算块的数量
         num_blocks_y = h // block_h
         num_blocks_x = w // block_w
 
@@ -158,22 +122,17 @@ class HalfPelMotionCompensator:
         for by in range(num_blocks_y):
             for bx in range(num_blocks_x):
                 # 获取当前块的位置
-                loc_x = bx * block_w  # 块的左上角x坐标
-                loc_y = by * block_h  # 块的左上角y坐标
+                loc_x = bx * block_w
+                loc_y = by * block_h
 
-                # 获取当前块
                 current_block = current_frame[loc_y:loc_y + block_h, loc_x:loc_x + block_w]
 
-                # 进行分层半像素块匹配
                 mv, ssd = self.block_matching_hierarchical(current_block, reference_frame, loc_x, loc_y)
                 motion_vectors[by, bx] = mv
 
         return motion_vectors
 
     def reconstruct_with_motion_vector_half_pel(self, reference_frame, motion_vectors):
-        """
-        使用半像素运动向量重建帧 (解码端使用)
-        """
         if len(reference_frame.shape) == 3:
             h, w, c = reference_frame.shape
             reconstructed = np.zeros_like(reference_frame)
@@ -192,18 +151,14 @@ class HalfPelMotionCompensator:
 
         for by in range(num_blocks_y):
             for bx in range(num_blocks_x):
-                # 获取运动向量
                 mv_x, mv_y = motion_vectors[by, bx]
 
-                # 计算块位置
                 loc_x = bx * block_w
                 loc_y = by * block_h
 
-                # 计算参考块位置
                 ref_x = loc_x + mv_x
                 ref_y = loc_y + mv_y
 
-                # 使用按需插值获取参考块
                 ref_block = self.get_half_pel_block(reference_frame, ref_x, ref_y, block_h, block_w)
                 reconstructed[loc_y:loc_y + block_h, loc_x:loc_x + block_w] = ref_block
 
@@ -218,7 +173,7 @@ class VideoCodec:
                  end_of_block=4000,
                  block_shape=(8, 8),
                  search_range=4,
-                 use_half_pel=True  # 新增参数
+                 use_half_pel=True
                  ):
 
         self.quantization_scale = quantization_scale
@@ -226,14 +181,13 @@ class VideoCodec:
         self.end_of_block = end_of_block
         self.block_shape = block_shape
         self.search_range = search_range
-        self.use_half_pel = use_half_pel  # 是否使用半像素运动估计
+        self.use_half_pel = use_half_pel
 
         self.intra_codec = IntraCodec(quantization_scale=quantization_scale, bounds=bounds, end_of_block=end_of_block,
                                       block_shape=block_shape)
         self.residual_codec = IntraCodec(quantization_scale=quantization_scale, bounds=bounds,
                                          end_of_block=end_of_block, block_shape=block_shape)
 
-        # 根据是否使用半像素选择运动补偿器
         if use_half_pel:
             self.motion_comp = HalfPelMotionCompensator(search_range=search_range)
         else:
@@ -256,7 +210,7 @@ class VideoCodec:
             curr_ycbcr = rgb2ycbcr(frame)
             ref_ycbcr = rgb2ycbcr(self.decoder_recon)
 
-            # Motion vector computation (支持半像素)
+            # Motion vector computation
             if self.use_half_pel:
                 motion_vector = self.motion_comp.compute_motion_vector_half_pel(
                     ref_ycbcr[..., 0], curr_ycbcr[..., 0])
@@ -275,13 +229,10 @@ class VideoCodec:
             # Compute residual
             residual = curr_ycbcr - recon_pred_frame_ycbcr
 
-            # 对于半像素运动向量，需要量化编码
             if self.use_half_pel:
-                # 将半像素运动向量量化为整数表示 (乘以2)
                 mv_quantized = (motion_vector * 2).astype(np.int32)
                 mv_flat = mv_quantized.flatten()
 
-                # 调整符号范围以适应半像素
                 if frame_num == 1:
                     symbol_range = np.arange(-self.search_range * 4, self.search_range * 4 + 1)
                     mv_pmf = stats_marg(mv_flat, symbol_range)
@@ -289,7 +240,6 @@ class VideoCodec:
                     self.motion_huffman.train(mv_pmf)
                     self.residual_codec.train_huffman_from_image(residual, is_source_rgb=False)
             else:
-                # 原来的整数运动向量处理
                 mv_flat = motion_vector.flatten()
                 if frame_num == 1:
                     symbol_range = np.arange(0, 81 + 2)
@@ -307,7 +257,6 @@ class VideoCodec:
             mv_decoded = self.motion_huffman.decode(motion_stream, motion_vector.size)
 
             if self.use_half_pel:
-                # 半像素运动向量反量化 (除以2)
                 mv_decoded = (mv_decoded.reshape(motion_vector.shape) / 2.0).astype(np.float32)
             else:
                 mv_decoded = mv_decoded.reshape(motion_vector.shape)
@@ -338,10 +287,9 @@ if __name__ == "__main__":
     from ivclab.utils import imread, calc_psnr
     import matplotlib.pyplot as plt
     from ivclab.signal import rgb2ycbcr, ycbcr2rgb
-    from exercises.ch5.deblock import deblock
 
     lena_small = imread('../data/lena_small.tif')
-
+    '''
     # 2. Chapter 4: Video Coding
     images = []
     for i in range(20, 40 + 1):
@@ -373,7 +321,7 @@ if __name__ == "__main__":
 
     np.save('../data/ch4_bpps.npy', ch4_bpps)
     np.save('../data/ch4_psnrs.npy', ch4_psnrs)
-
+    '''
     images = []
     for i in range(20, 40 + 1):
         images.append(imread(f'../data/foreman20_40_RGB/foreman00{i}.bmp'))
