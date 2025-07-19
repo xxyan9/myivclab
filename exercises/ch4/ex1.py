@@ -21,6 +21,7 @@ for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
     psnrs = list()
     for frame_num, image in enumerate(images):
         reconstructed_image, bitstream, bitsize = video_codec.encode_decode(image, frame_num=frame_num)
+        reconstructed_image = ycbcr2rgb(reconstructed_image)
         bpp = bitsize/(image.size/3)
         psnr = calc_psnr(image, reconstructed_image)
         print(f"Frame:{frame_num} PSNR: {psnr:.2f} dB bpp: {bpp:.2f}")

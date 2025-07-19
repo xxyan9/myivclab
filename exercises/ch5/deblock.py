@@ -14,6 +14,17 @@ beta_table = np.array([
 ])
 
 
+
+def qscale_to_qp_index(q_scale):
+    """
+    Convert quantization_scale into the QP index used in
+    standard video compression to look up the alpha_table and
+    beta_table to determine the strength of deblocking filtering.
+    """
+    qp = int(round(6 * np.log2(q_scale)))
+    return np.clip(qp, 0, 51)
+
+
 def deblock(img_ycbcr: np.ndarray, index: int) -> np.ndarray:
     """
     Apply post-deblocking filter to YCbCr image.
@@ -74,9 +85,8 @@ def deblock(img_ycbcr: np.ndarray, index: int) -> np.ndarray:
                     filter_edge(p, q)
                     left[k, -3:] = p[1:]
                     right[k, :3] = q[:3]
-
-    # return np.clip(img_ycbcr, 0, 255)
     return img
+
 
 if __name__ == "__main__":
     from ivclab import ycbcr2rgb

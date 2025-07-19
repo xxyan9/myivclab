@@ -11,14 +11,14 @@ from exercises.ch5 import deblock
 
 class VideoCodec:
 
-    def __init__(self, 
+    def __init__(self,
                  quantization_scale=1.0,
                  bounds=(-1000, 4000),
                  end_of_block=4000,
                  block_shape=(8, 8),
-                 search_range=4
+                 search_range=4,
                  ):
-        
+
         self.quantization_scale = quantization_scale
         self.bounds = bounds
         self.end_of_block = end_of_block
@@ -31,27 +31,19 @@ class VideoCodec:
         # self.motion_huffman = HuffmanCoder(lower_bound=-((2*search_range + 1)**2 - 1)//2)
         self.motion_huffman = HuffmanCoder(lower_bound=0)
         self.decoder_recon = None
-    
+
     def encode_decode(self, frame, frame_num=0):
         if frame_num == 0:
         # YOUR CODE STARTS HERE
             # ---Intra mode---
             bitstream, residual_bitsize = self.intra_codec.intra_encode(frame, return_bpp=True)
             self.decoder_recon = self.intra_codec.intra_decode(bitstream, frame.shape)
-
-            # === Chapter 5-1: In-loop deblocking filter ===
-            qp_index = self.qscale_to_qp_index(self.quantization_scale)
-            filtered_ycbcr = deblock.deblock(self.decoder_recon, qp_index)
-            # ==============================================
-
-            # Convert to RGB
-            self.decoder_recon = ycbcr2rgb(filtered_ycbcr)
             motion_bitsize = 0  # No motion in intra frame
         else:
             # ---Inter mode---
             # Perform color transform
             curr_ycbcr = rgb2ycbcr(frame)
-            ref_ycbcr = rgb2ycbcr(self.decoder_recon)
+            ref_ycbcr = self.decoder_recon
 
             # Motion vector computation
             motion_vector = self.motion_comp.compute_motion_vector(ref_ycbcr[..., 0], curr_ycbcr[..., 0])
@@ -86,30 +78,10 @@ class VideoCodec:
 
             # Residual decoding
             residual_recon = self.residual_codec.intra_decode(residual_stream, frame.shape)
-            recon_frame_ycbcr = recon_pred_frame_ycbcr_docoded + residual_recon
-
-            # === Chapter 5-1: In-loop deblocking filter ===
-            # Compute quantization index for deblocking
-            qp_index = self.qscale_to_qp_index(self.quantization_scale)
-
-            # Apply in-loop deblocking filter
-            filtered_recon_frame_ycbcr = deblock.deblock(recon_frame_ycbcr, qp_index)
-            # ==============================================
-
-            # Convert to RGB
-            self.decoder_recon = ycbcr2rgb(filtered_recon_frame_ycbcr).copy()
+            self.decoder_recon = recon_pred_frame_ycbcr_docoded + residual_recon
 
             bitstream = (motion_stream, residual_stream)
         # YOUR CODE ENDS HERE
 
         bitsize = residual_bitsize + motion_bitsize
         return self.decoder_recon, bitstream, bitsize
-
-    def qscale_to_qp_index(self, q_scale):
-        """
-        Convert quantization_scale into the QP index used in
-        standard video compression to look up the alpha_table and
-        beta_table to determine the strength of deblocking filtering.
-        """
-        qp = int(round(6 * np.log2(q_scale)))
-        return np.clip(qp, 0, 51)
