@@ -5,30 +5,33 @@ from ivclab.utils import ZigZag, Patcher
 from ivclab.signal import DiscreteCosineTransform
 from ivclab.entropy import HuffmanCoder, stats_marg
 from ivclab.signal import rgb2ycbcr, ycbcr2rgb
-from exercises.ch5 import adaptivequant
+from exercises.ch5.adaptivequant import adaptive_quantize, adaptive_dequantize, set_q_map
+# from exercises.ch5.blockmode import block_merge, block_mode_decision
+
 import matplotlib.pyplot as plt
 
 class IntraCodec:
 
-    def __init__(self, 
+    def __init__(self,
                  quantization_scale=1.0,
                  bounds=(-1000, 4000),
                  end_of_block=4000,
                  block_shape=(8, 8),
                  use_adaptive_quant=False,
-                 min_q=0.5,
-                 max_q=2
+                 use_mode_decision=False
                  ):
-        
+
         self.quantization_scale = quantization_scale
         self.bounds = bounds
         self.end_of_block = end_of_block
         self.block_shape = block_shape
         self.symbol_length = 0
+
+        # For adaptive quantization
         self.use_adaptive_quant = use_adaptive_quant
-        self.min_q = min_q
-        self.max_q = max_q
-        self.q_map = None   # For adaptive quantization
+        self.q_map = None
+        # For block mode decision
+        self.use_mode_decision = use_mode_decision
 
         self.dct = DiscreteCosineTransform()
         self.quant = PatchQuant(quantization_scale=quantization_scale)
@@ -54,18 +57,10 @@ class IntraCodec:
         patches = self.patcher.patch(img)
         dct_patches = self.dct.transform(patches)
 
+        # Adaptive quantization
         if self.use_adaptive_quant:
-            img_y = img[..., 0]
-            # # Compute gradient strength per block
-            # norm_grad_map = adaptivequant.compute_gradient_blockwise(img_y)
-            # # Map gradient to local quantization scale
-            # self.q_map = self.max_q - (self.max_q - self.min_q) * norm_grad_map
-
-            importance_map = adaptivequant.compute_importance_map(img_y, blk_size=8, alpha=0.6, beta=1.5)
-            self.q_map = self.max_q - (self.max_q - self.min_q) * importance_map
-            # self.q_map = np.clip(self.q_map, self.min_q, self.max_q)
-            quantized = adaptivequant.adaptive_quantize(dct_patches=dct_patches, img_shape=img.shape,
-                q_map=self.q_map, quantizer=self.quant)
+            self.q_map = set_q_map(dct_patches, base_q=self.quantization_scale)
+            quantized = adaptive_quantize(dct_patches, self.q_map, self.quant)
         else:
             quantized = self.quant.quantize(dct_patches)
 
@@ -75,18 +70,18 @@ class IntraCodec:
         # YOUR CODE ENDS HERE
 
         return symbols
-    
+
     def symbols2image(self, symbols, original_shape):
         """
         Reconstructs the original image from the symbol representation
-        by applying ZeroRunDecoding, Inverse ZigZag, Dequantization and 
-        IDCT, ycbcr2rgb in order. The argument original_shape is required to compute 
-        patch_shape, which is needed by ZeroRunDecoding to correctly 
+        by applying ZeroRunDecoding, Inverse ZigZag, Dequantization and
+        IDCT, ycbcr2rgb in order. The argument original_shape is required to compute
+        patch_shape, which is needed by ZeroRunDecoding to correctly
         reshape the input image from blocks.
 
         symbols: List of integers
         original_shape: List of 3 elements that contains H, W and C
-        
+
         returns:
             reconstructed_img: np.array of shape [H, W, C]
         """
@@ -97,8 +92,7 @@ class IntraCodec:
         zz_inverse = self.zigzag.unflatten(zr_decoded)
 
         if self.use_adaptive_quant:
-            dequantized = adaptivequant.adaptive_dequantize(zz_patches=zz_inverse, img_shape=original_shape,
-                                                        q_map=self.q_map, quantizer=self.quant)
+            dequantized = adaptive_dequantize(zz_inverse, self.q_map, self.quant)
         else:
             dequantized = self.quant.dequantize(zz_inverse)
 
@@ -110,10 +104,10 @@ class IntraCodec:
         # YOUR CODE ENDS HERE
 
         return reconstructed_img
-    
+
     def train_huffman_from_image(self, training_img, is_source_rgb=True):
         """
-        Finds the symbols representing the image, extracts the 
+        Finds the symbols representing the image, extracts the
         probability distribution of them and trains the huffman coder with it.
 
         training_img: np.array of shape [H, W, C]
@@ -123,8 +117,8 @@ class IntraCodec:
         """
         # YOUR CODE STARTS HERE
         symbols = self.image2symbols(training_img, is_source_rgb)
-        symbol_range = np.arange(self.bounds[0], self.bounds[1]+2)
-        pmf = stats_marg(symbols, symbol_range)    # Calculate probability mass function
+        symbol_range = np.arange(self.bounds[0], self.bounds[1] + 2)
+        pmf = stats_marg(symbols, symbol_range)  # Calculate probability mass function
         self.huffman.train(pmf)
         # YOUR CODE ENDS HERE
 
@@ -166,7 +160,7 @@ class IntraCodec:
         # YOUR CODE ENDS HERE
 
         return reconstructed_img
-    
+
 if __name__ == "__main__":
     from ivclab.utils import imread, calc_psnr
     import matplotlib.pyplot as plt
@@ -194,4 +188,3 @@ if __name__ == "__main__":
 
 
 
-    
