@@ -69,3 +69,30 @@ class MotionCompensator:
                                                                        ref_j_start: ref_j_end]
         # YOUR CODE ENDS HERE
         return image
+
+    ##############################################################
+    # The following functions are used for Block Mode Decision
+    def compute_block_mv(self, ref_y, block_y, top_left):
+        i, j = top_left
+        index_matrix = np.arange(1, 82).reshape((9, 9))
+        sse_min = float('inf')
+        mv_index = 0
+        best_block = np.zeros_like(block_y)
+
+        for m in range(-4, 5):
+            for n in range(-4, 5):
+                ref_i, ref_j = i + m, j + n
+                if 0 <= ref_i < ref_y.shape[0] - 7 and 0 <= ref_j < ref_y.shape[1] - 7:
+                    candidate = ref_y[ref_i:ref_i + 8, ref_j:ref_j + 8]
+                    sse = np.sum((candidate - block_y) ** 2)
+                    if sse < sse_min:
+                        sse_min = sse
+                        mv_index = index_matrix[m + 4, n + 4]
+                        best_block = candidate.copy()
+        return (m, n), best_block, mv_index
+
+    def reconstruct_block_with_mv(self, ref_image, top_left, mv):
+        i, j = top_left
+        dy, dx = mv
+        ref_block = ref_image[i + dy:i + dy + 8, j + dx:j + dx + 8]
+        return ref_block

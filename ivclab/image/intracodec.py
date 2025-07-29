@@ -18,7 +18,6 @@ class IntraCodec:
                  end_of_block=4000,
                  block_shape=(8, 8),
                  use_adaptive_quant=False,
-                 use_mode_decision=False
                  ):
 
         self.quantization_scale = quantization_scale
@@ -30,8 +29,6 @@ class IntraCodec:
         # For adaptive quantization
         self.use_adaptive_quant = use_adaptive_quant
         self.q_map = None
-        # For block mode decision
-        self.use_mode_decision = use_mode_decision
 
         self.dct = DiscreteCosineTransform()
         self.quant = PatchQuant(quantization_scale=quantization_scale)
@@ -105,7 +102,24 @@ class IntraCodec:
 
         return reconstructed_img
 
-    def train_huffman_from_image(self, training_img, is_source_rgb=True):
+    def residual2symbols(self, block_residual):
+        # Step 1: Quantize
+        qstep = 3
+        # quantized = np.round(block_residual / qstep).astype(np.int32)
+        quantized = np.clip(np.round(block_residual / qstep), -63, 63).astype(np.int32)
+        # Step 2: Offset to non-negative range
+        offset = 100  # to keep symbols >= 0
+        symbols = quantized + offset
+        return symbols.flatten().tolist()
+
+    def symbols2residual(self, symbols, shape):
+        qstep = 3
+        offset = 100
+        symbols = np.array(symbols).reshape(shape)
+        residual = (symbols - offset).astype(np.float32) * qstep
+        return residual
+
+    def train_huffman_from_image(self, training_img, is_source_rgb=True, is_block_residual=False):
         """
         Finds the symbols representing the image, extracts the
         probability distribution of them and trains the huffman coder with it.
@@ -116,13 +130,16 @@ class IntraCodec:
             Nothing
         """
         # YOUR CODE STARTS HERE
-        symbols = self.image2symbols(training_img, is_source_rgb)
+        if is_block_residual:
+            symbols = self.residual2symbols(training_img)
+        else:
+            symbols = self.image2symbols(training_img, is_source_rgb)
         symbol_range = np.arange(self.bounds[0], self.bounds[1] + 2)
-        pmf = stats_marg(symbols, symbol_range)  # Calculate probability mass function
+        pmf = stats_marg(np.array(symbols), symbol_range)  # Calculate probability mass function
         self.huffman.train(pmf)
         # YOUR CODE ENDS HERE
 
-    def intra_encode(self, img: np.array, return_bpp=False, is_source_rgb=True):
+    def intra_encode(self, img: np.array, return_bpp=False, is_source_rgb=True, is_block_residual=False):
         """
         Encodes an image to a bitstream and return it by converting it to
         symbols and compressing them with the Huffman coder.
@@ -133,7 +150,11 @@ class IntraCodec:
             bitstream: List of integers produced by the Huffman coder
         """
         # YOUR CODE STARTS HERE
-        symbols = self.image2symbols(img, is_source_rgb)
+        if is_block_residual:
+            symbols = self.residual2symbols(img)
+        else:
+            symbols = self.image2symbols(img, is_source_rgb)
+
         self.symbol_length = len(symbols)
         bitstream, bitrate = self.huffman.encode(symbols)
 
@@ -142,7 +163,7 @@ class IntraCodec:
         # YOUR CODE ENDS HERE
         return bitstream
 
-    def intra_decode(self, bitstream, original_shape):
+    def intra_decode(self, bitstream, original_shape, is_block_residual=False):
         """
         Decodes an image from a bitstream by decoding it with the Huffman
         coder and reconstructing it from the symbols.
@@ -156,10 +177,13 @@ class IntraCodec:
         """
         # YOUR CODE STARTS HERE
         symbols = self.huffman.decode(bitstream, self.symbol_length)
-        reconstructed_img = self.symbols2image(symbols, original_shape)
+        if is_block_residual:
+            reconstructed = self.symbols2residual(symbols, original_shape)
+        else:
+            reconstructed = self.symbols2image(symbols, original_shape)
         # YOUR CODE ENDS HERE
 
-        return reconstructed_img
+        return reconstructed
 
 if __name__ == "__main__":
     from ivclab.utils import imread, calc_psnr

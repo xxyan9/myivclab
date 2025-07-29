@@ -18,7 +18,6 @@ all_bpps = list()
 all_PSNRs = list()
 
 for q_scale in [0.15, 0.3, 0.7, 1.0, 1.5, 3, 5, 7, 10]:
-# for q_scale in [1.0]:
     intracodec = IntraCodec(quantization_scale=q_scale)
     intracodec.train_huffman_from_image(lena_small)
     image_psnrs = list()
@@ -44,6 +43,7 @@ print('-'*12)
 ch3_bpps = np.array(all_bpps)
 ch3_psnrs = np.array(all_PSNRs)
 
+
 # 2. Chapter 4: Video Coding
 images = []
 for i in range(20, 40 + 1):
@@ -53,7 +53,6 @@ all_bpps = list()
 all_psnrs = list()
 
 for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
-# for q_scale in [1]:
     video_codec = VideoCodec(quantization_scale=q_scale)
     video_codec.intra_codec.train_huffman_from_image(lena_small, is_source_rgb=True)
     bpps = list()
@@ -84,7 +83,6 @@ all_bpps = list()
 all_psnrs = list()
 
 for q_scale in [0.15, 0.3, 0.7, 1.0, 1.5, 3, 5, 7, 10]:
-# for q_scale in [1.0]:
     intra_codec = IntraCodec(quantization_scale=q_scale)
     intra_codec.train_huffman_from_image(lena_small)
 
@@ -148,8 +146,8 @@ for q_scale in [0.15, 0.3, 0.7, 1.0, 1.5, 3, 5, 7, 10]:
     all_bpps.append(bpp)
     all_psnrs.append(psnr)
     print(f"Q Scale: {q_scale}, PSNR: {psnr:.2f} dB, bpp: {bpp:.2f}")
+    print('-' * 12)
 
-print('-' * 12)
 ch5_aquant_bpps = np.array(all_bpps)
 ch5_aquant_psnrs = np.array(all_psnrs)
 np.save('../data/ch5_aquant_bpps.npy', ch5_aquant_bpps)
@@ -164,34 +162,35 @@ for i in range(20, 40 + 1):
 all_bpps = list()
 all_psnrs = list()
 
-for q_scale in [0.15, 0.3, 0.7, 1.0, 1.5, 3, 5, 7, 10]:
-    intra_codec = IntraCodec(quantization_scale=q_scale)
-    intra_codec.train_huffman_from_image(lena_small)
-    intra_codec.use_mode_decision = True
+for q_scale in [1.0]:
+    # 0.07, 0.2, 0.4, 0.8,  , 1.5, 2, 3, 4, 4.5
+    video_codec = VideoCodec(quantization_scale=q_scale)
+    video_codec.intra_codec.train_huffman_from_image(lena_small)
+    video_codec.use_mode_decision = True
 
     image_bpps = list()
     image_psnrs = list()
 
     for frame_num, image in enumerate(images):
-        message, bitrate = intra_codec.intra_encode(image, return_bpp=True, is_source_rgb=True)
-        reconstructed_img = intra_codec.intra_decode(message, image.shape)
+        reconstructed_img, bitstream, bitsize = video_codec.encode_decode(image, frame_num=frame_num)
         reconstructed_img = ycbcr2rgb(reconstructed_img)
-        bpp = bitrate / (image.size / 3)
+        bpp = bitsize / (image.size / 3)
         psnr = calc_psnr(image, reconstructed_img)
         image_bpps.append(bpp)
         image_psnrs.append(psnr)
+        # print(f"frame: {frame_num}, PSNR: {psnr:.2f} dB, bpp: {bpp:.2f}")
 
     bpp = np.mean(image_bpps)
     psnr = np.mean(image_psnrs)
     all_bpps.append(bpp)
     all_psnrs.append(psnr)
     print(f"Q Scale: {q_scale}, PSNR: {psnr:.2f} dB, bpp: {bpp:.2f}")
+    print('-' * 12)
 
-print('-' * 12)
 ch5_mdecision_bpps = np.array(all_bpps)
 ch5_mdecision_psnrs = np.array(all_psnrs)
-np.save('../data/ch5_aquant_bpps.npy', ch5_mdecision_bpps)
-np.save('../data/ch5_aquant_psnrs.npy', ch5_mdecision_psnrs)
+np.save('../data/ch5_mdecision_bpps.npy', ch5_mdecision_bpps)
+np.save('../data/ch5_mdecision_psnrs.npy', ch5_mdecision_psnrs)
 
 # 6. Half pel motion compensation
 # 7. Quarter pel motion compensation
@@ -222,7 +221,7 @@ plt.plot(ch4_bpps, ch4_psnrs, linestyle='--', marker='v', color='blue', label='V
 plt.plot(ch5_aquant_bpps, ch5_aquant_psnrs, linestyle='--', marker='.',
          color='purple', label='Intra Opt: Adaptive quantize')
 plt.plot(ch5_mdecision_bpps, ch5_mdecision_psnrs, linestyle='--', marker='>',
-         color='purple', label='Intra Opt: Block mode decision')
+         color='black', label='Video Opt: Block mode decision')
 plt.plot(ch5_halfpel_bpps, ch5_halfpel_psnrs, linestyle='--', marker='^',
          color='red', label='Video Opt: Halfpel')
 # plt.plot(ch5_quarterpel_bpps, ch5_quarterpel_psnrs, linestyle='--', marker='s',
