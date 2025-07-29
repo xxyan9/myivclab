@@ -162,8 +162,8 @@ for i in range(20, 40 + 1):
 all_bpps = list()
 all_psnrs = list()
 
-for q_scale in [1.0]:
-    # 0.07, 0.2, 0.4, 0.8,  , 1.5, 2, 3, 4, 4.5
+for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
+    # 0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5
     video_codec = VideoCodec(quantization_scale=q_scale)
     video_codec.intra_codec.train_huffman_from_image(lena_small)
     video_codec.use_mode_decision = True

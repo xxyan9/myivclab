@@ -20,7 +20,7 @@ def inter_mode_decision(curr_ycbcr, ref_ycbcr, motion_comp, intra_codec, residua
             # Mode 0: Skip (copy from reference)
             pred_skip = block_ref
             dist0 = calc_mse(block_current, pred_skip)
-            bits0 = 6
+            bits0 = 3
             J0 = dist0 + lambda_rd * bits0
 
             # Mode 1: Inter + Residual
