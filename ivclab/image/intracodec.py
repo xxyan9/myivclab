@@ -102,18 +102,22 @@ class IntraCodec:
 
         return reconstructed_img
 
-    def residual2symbols(self, block_residual):
+    def residual2symbols(self, block_residual, q_scale):
         # Step 1: Quantize
-        qstep = 3
-        # quantized = np.round(block_residual / qstep).astype(np.int32)
-        quantized = np.clip(np.round(block_residual / qstep), -63, 63).astype(np.int32)
+        qstep = 12 * q_scale + 1
+        # qstep = 3
+        # qstep = 5 * np.log2(q_scale + 1) + 2
+        # quantized = np.clip(np.round(block_residual / qstep), -63, 63).astype(np.int32)
+        quantized = np.round(block_residual / qstep).astype(np.int32)
         # Step 2: Offset to non-negative range
         offset = 100  # to keep symbols >= 0
         symbols = quantized + offset
         return symbols.flatten().tolist()
 
-    def symbols2residual(self, symbols, shape):
-        qstep = 3
+    def symbols2residual(self, symbols, shape, q_scale):
+        # qstep = 3
+        qstep = 12 * q_scale + 1
+        # qstep = 5 * np.log2(q_scale + 1) + 2
         offset = 100
         symbols = np.array(symbols).reshape(shape)
         residual = (symbols - offset).astype(np.float32) * qstep
@@ -131,7 +135,7 @@ class IntraCodec:
         """
         # YOUR CODE STARTS HERE
         if is_block_residual:
-            symbols = self.residual2symbols(training_img)
+            symbols = self.residual2symbols(training_img, q_scale=self.quantization_scale)
         else:
             symbols = self.image2symbols(training_img, is_source_rgb)
         symbol_range = np.arange(self.bounds[0], self.bounds[1] + 2)
@@ -151,7 +155,7 @@ class IntraCodec:
         """
         # YOUR CODE STARTS HERE
         if is_block_residual:
-            symbols = self.residual2symbols(img)
+            symbols = self.residual2symbols(img, q_scale=self.quantization_scale)
         else:
             symbols = self.image2symbols(img, is_source_rgb)
 
@@ -178,7 +182,7 @@ class IntraCodec:
         # YOUR CODE STARTS HERE
         symbols = self.huffman.decode(bitstream, self.symbol_length)
         if is_block_residual:
-            reconstructed = self.symbols2residual(symbols, original_shape)
+            reconstructed = self.symbols2residual(symbols, original_shape, q_scale=self.quantization_scale)
         else:
             reconstructed = self.symbols2image(symbols, original_shape)
         # YOUR CODE ENDS HERE

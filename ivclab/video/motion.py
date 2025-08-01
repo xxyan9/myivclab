@@ -77,7 +77,6 @@ class MotionCompensator:
         index_matrix = np.arange(1, 82).reshape((9, 9))
         sse_min = float('inf')
         mv_index = 0
-        best_block = np.zeros_like(block_y)
 
         for m in range(-4, 5):
             for n in range(-4, 5):
@@ -88,8 +87,7 @@ class MotionCompensator:
                     if sse < sse_min:
                         sse_min = sse
                         mv_index = index_matrix[m + 4, n + 4]
-                        best_block = candidate.copy()
-        return (m, n), best_block, mv_index
+        return (m, n), mv_index
 
     def reconstruct_block_with_mv(self, ref_image, top_left, mv):
         i, j = top_left

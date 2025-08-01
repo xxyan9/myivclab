@@ -4,7 +4,7 @@ from ivclab.image import IntraCodec
 from ivclab.entropy import HuffmanCoder, stats_marg
 from ivclab.signal import rgb2ycbcr, ycbcr2rgb
 from ivclab.video import MotionCompensator
-from exercises.ch5.modedecision import inter_mode_decision
+from exercises.ch5.modedecision import block_mode_decision
 from ivclab.utils import calc_psnr
 import matplotlib.pyplot as plt
 from exercises.ch5 import deblock
@@ -72,9 +72,10 @@ class VideoCodec:
 
             # Block mode decision
             if self.use_mode_decision:
-                recon_ycbcr, bitsize = inter_mode_decision(
+                recon_ycbcr, bitsize = block_mode_decision(
                     curr_ycbcr, ref_ycbcr, motion_comp=self.motion_comp,
-                    intra_codec=self.intra_codec, residual_codec=self.residual_codec, q_scale = self.quantization_scale
+                    motion_huffman=self.motion_huffman, q_scale=self.quantization_scale,
+                    intra_codec=self.intra_codec, residual_codec=self.residual_codec
                 )
                 self.decoder_recon = recon_ycbcr
                 bitstream = None
