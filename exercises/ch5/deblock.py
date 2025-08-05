@@ -179,7 +179,6 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from ivclab.signal import rgb2ycbcr, ycbcr2rgb
 
-    '''
     lena_small = imread('../data/lena_small.tif')
 
     images = []
@@ -252,7 +251,6 @@ if __name__ == "__main__":
 
     np.save('../data/ch5_deblock_bpps.npy', ch5_deblock_bpps)
     np.save('../data/ch5_deblock_psnrs.npy', ch5_deblock_psnrs)
-'''
     ch3_bpps = np.load('../data/ch3_bpps.npy')
     ch3_psnrs = np.load('../data/ch3_psnrs.npy')
     ch5_deblock_bpps = np.load('../data/ch5_deblock_bpps.npy')
