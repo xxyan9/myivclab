@@ -32,6 +32,7 @@ python exercises/ch5/deblock.py
 ```bash
 python exercises/ch5/adaptivequant.py
 ```
+
 ### For inter optimization
 1. **Block mode decision**
 ```bash
@@ -49,4 +50,9 @@ python exercises/ch5/quarterpel.py
 3. **Fast mostion estimation**
 ```bash
 python exercises/ch5/fastmotion.py
+```
+
+## How to run the test and view the results
+```bash
+python exercises/ch5/main.py
 ```
