@@ -1,32 +1,51 @@
-# IVC Lab Code Repository
+# IVC Lab Final Codec Optimization
 
-Source code for the Image and Video Compression Lab 
-lectures at the Technical University of Munich
+TUM Master Course "Image and Video Compression Lab" in SS25.
 
-## How to setup the codebase
+## Environment
+Python 3.9+
 
-Create a conda environment & activate
+## Main Optimization Dictionary
+│ ...
+├─ch4
+│      ...
+├─ch5
+│  │  adaptivequant.py
+│  │  deblock.py
+│  │  fastmotion.py
+│  │  halfpel.py
+│  │  main.py
+│  │  modedecision.py
+│  │  quarterpel.py
+│  └─ ...
+└─data
+    │  ...
+
+## How to run the codec
+### For intra optimization
+1. **Deblocking filter**
 ```bash
-conda create --name ivclabenv
-conda activate ivclabenv
+python exercises/ch5/deblock.py
 ```
-
-Install necessary packages
-
+2. **Adaptive quantization**
 ```bash
-pip install -r requirements.txt
-pip install -e .
+python exercises/ch5/adaptivequant.py
 ```
-
-## How to run the test cases
-
+### For inter optimization
+1. **Block mode decision**
 ```bash
-python -m unittest -v tests/ch1.py
+python exercises/ch5/modedecision.py
 ```
-
-## How to run the exercises
-
+2. **Fractional-pel motion estimation**
+Half pixel search:
 ```bash
-python exercises/ch1/ex1.py
+python exercises/ch5/halfpel.py
 ```
-
+Quarter pixel search:
+```bash
+python exercises/ch5/quarterpel.py
+```
+3. **Fast mostion estimation**
+```bash
+python exercises/ch5/fastmotion.py
+```
