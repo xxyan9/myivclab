@@ -52,7 +52,7 @@ python exercises/ch5/quarterpel.py
 python exercises/ch5/fastmotion.py
 ```
 
-### How to run the test and view the results
+### How to run the test and view results
 ```bash
 python exercises/ch5/main.py
 ```
