@@ -47,7 +47,7 @@ python exercises/ch5/halfpel.py
 ```bash
 python exercises/ch5/quarterpel.py
 ```
-3. Fast mostion estimation
+3. Fast motion estimation
 ```bash
 python exercises/ch5/fastmotion.py
 ```
