@@ -319,7 +319,6 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from ivclab.signal import rgb2ycbcr, ycbcr2rgb
 
-    '''
     lena_small = imread('../data/lena_small.tif')
     # 2. Chapter 4: Video Coding
     images = []
@@ -352,6 +351,7 @@ if __name__ == "__main__":
 
     np.save('../data/ch4_bpps.npy', ch4_bpps)
     np.save('../data/ch4_psnrs.npy', ch4_psnrs)
+
     images = []
     for i in range(20, 40 + 1):
         images.append(imread(f'../data/foreman20_40_RGB/foreman00{i}.bmp'))
@@ -379,7 +379,6 @@ if __name__ == "__main__":
 
     np.save('../data/ch5_quarterpel_bpps.npy', ch5_quarterpel_bpps)
     np.save('../data/ch5_quarterpel_psnrs.npy', ch5_quarterpel_psnrs)
-    '''
     ch4_bpps = np.load('../data/ch4_bpps.npy')
     ch4_psnrs = np.load('../data/ch4_psnrs.npy')
     ch5_quarterpel_bpps = np.load('../data/ch5_quarterpel_bpps.npy')

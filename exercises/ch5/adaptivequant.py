@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def adaptive_quantize(dct_patches, q_map, quantizer):
@@ -58,7 +59,6 @@ if __name__ == "__main__":
     from ivclab.utils import imread, calc_psnr
     from ivclab.image import IntraCodec
     from ivclab.signal import rgb2ycbcr, ycbcr2rgb
-    import matplotlib.pyplot as plt
 
     lena_small = imread('../data/lena_small.tif')
 
