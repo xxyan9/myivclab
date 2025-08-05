@@ -1,11 +1,11 @@
-# IVC Lab Final Codec Optimization
+## IVC Lab Final Codec Optimization
 
 TUM Master Course "Image and Video Compression Lab" in SS25.
 
-## Environment
+### Environment
 Python 3.9+
 
-## Main Optimization Structure
+### Main Optimization Structure
  ```│ ...
 ├─ch4
 │      ...
@@ -22,23 +22,23 @@ Python 3.9+
     │  ...
  ```
 
-## How to run the codec
-### For intra optimization
-1. **Deblocking filter**
+### How to run the codec
+#### For intra optimization
+1. Deblocking filter
 ```bash
 python exercises/ch5/deblock.py
 ```
-2. **Adaptive quantization**
+2. Adaptive quantization
 ```bash
 python exercises/ch5/adaptivequant.py
 ```
 
-### For inter optimization
-1. **Block mode decision**
+#### For inter optimization
+1. Block mode decision
 ```bash
 python exercises/ch5/modedecision.py
 ```
-2. **Fractional-pel motion estimation**
+2. Fractional-pel motion estimation
 - Half pixel search:
 ```bash
 python exercises/ch5/halfpel.py
@@ -47,12 +47,12 @@ python exercises/ch5/halfpel.py
 ```bash
 python exercises/ch5/quarterpel.py
 ```
-3. **Fast mostion estimation**
+3. Fast mostion estimation
 ```bash
 python exercises/ch5/fastmotion.py
 ```
 
-## How to run the test and view the results
+### How to run the test and view the results
 ```bash
 python exercises/ch5/main.py
 ```
