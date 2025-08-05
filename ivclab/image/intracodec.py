@@ -10,6 +10,7 @@ from exercises.ch5.adaptivequant import adaptive_quantize, adaptive_dequantize, 
 
 import matplotlib.pyplot as plt
 
+
 class IntraCodec:
 
     def __init__(self,

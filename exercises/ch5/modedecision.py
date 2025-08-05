@@ -5,8 +5,10 @@ from ivclab.utils import calc_mse
 index_matrix = np.arange(1, 82).reshape((9, 9))
 index_to_mv = {index_matrix[i, j]: (i - 4, j - 4) for i in range(9) for j in range(9)}
 
+
 def mv_index_to_offset(index):
     return index_to_mv[index]
+
 
 def block_mode_decision(
         curr_ycbcr, ref_ycbcr, motion_comp, motion_huffman,
@@ -94,6 +96,67 @@ def block_mode_decision(
 
     print(f"Skip: {skip_count}, Inter: {inter_count}, Intra: {intra_count}")
     return recon_ycbcr, total_bits
+
+
+if __name__ == "__main__":
+    from ivclab.utils import imread, calc_psnr
+    from ivclab.video import VideoCodec
+    from ivclab.signal import rgb2ycbcr, ycbcr2rgb
+    import matplotlib.pyplot as plt
+
+    lena_small = imread('../data/lena_small.tif')
+
+    images = []
+    for i in range(20, 40 + 1):
+        images.append(imread(f'../data/foreman20_40_RGB/foreman00{i}.bmp'))
+
+    all_bpps = list()
+    all_psnrs = list()
+
+    # for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
+    for q_scale in [0.07, 0.2, 0.4]:
+        video_codec = VideoCodec(quantization_scale=q_scale)
+        video_codec.intra_codec.train_huffman_from_image(lena_small)
+        video_codec.use_mode_decision = True
+
+        image_bpps = list()
+        image_psnrs = list()
+
+        for frame_num, image in enumerate(images):
+            reconstructed_img, bitstream, bitsize = video_codec.encode_decode(image, frame_num=frame_num)
+            reconstructed_img = ycbcr2rgb(reconstructed_img)
+            bpp = bitsize / (image.size / 3)
+            psnr = calc_psnr(image, reconstructed_img)
+            image_bpps.append(bpp)
+            image_psnrs.append(psnr)
+            # print(f"frame: {frame_num}, PSNR: {psnr:.2f} dB, bpp: {bpp:.2f}")
+
+        bpp = np.mean(image_bpps)
+        psnr = np.mean(image_psnrs)
+        all_bpps.append(bpp)
+        all_psnrs.append(psnr)
+        print(f"Q Scale: {q_scale}, PSNR: {psnr:.2f} dB, bpp: {bpp:.2f}")
+        print('-' * 12)
+
+    ch5_mdecision_bpps = np.array(all_bpps)
+    ch5_mdecision_psnrs = np.array(all_psnrs)
+    np.save('../data/ch5_mdecision_bpps.npy', ch5_mdecision_bpps)
+    np.save('../data/ch5_mdecision_psnrs.npy', ch5_mdecision_psnrs)
+
+    ch4_bpps = np.load('../data/ch4_bpps.npy')
+    ch4_psnrs = np.load('../data/ch4_psnrs.npy')
+    ch5_mdecision_bpps = np.load('../data/ch5_mdecision_bpps.npy')
+    ch5_mdecision_psnrs = np.load('../data/ch5_mdecision_psnrs.npy')
+
+    plt.figure()
+    plt.xlabel('Bitrate (bpp)')
+    plt.ylabel('PSNR [dB]')
+    plt.title('Rate-Distortion Curve')
+    plt.plot(ch4_bpps, ch4_psnrs, linestyle='--', marker='o', color='black', label='Video Codec Solution')
+    plt.plot(ch5_mdecision_bpps, ch5_mdecision_psnrs, linestyle='--', marker='*', color='orange',
+             label='Video Opt: Block mode decision')
+    plt.legend()
+    plt.show()
 
 
 
