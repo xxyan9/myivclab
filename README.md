@@ -5,9 +5,9 @@ TUM Master Course "Image and Video Compression Lab" in SS25.
 ## Environment
 Python 3.9+
 
-## Main Optimization Dictionary
-│ ...
-├─ch4
+## Main Optimization Structure
+ ```│ ...
+ ```├─ch4
 │      ...
 ├─ch5
 │  │  adaptivequant.py
@@ -37,11 +37,11 @@ python exercises/ch5/adaptivequant.py
 python exercises/ch5/modedecision.py
 ```
 2. **Fractional-pel motion estimation**
-Half pixel search:
+- Half pixel search:
 ```bash
 python exercises/ch5/halfpel.py
 ```
-Quarter pixel search:
+- Quarter pixel search:
 ```bash
 python exercises/ch5/quarterpel.py
 ```
