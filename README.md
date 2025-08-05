@@ -7,7 +7,7 @@ Python 3.9+
 
 ## Main Optimization Structure
  ```│ ...
- ```├─ch4
+├─ch4
 │      ...
 ├─ch5
 │  │  adaptivequant.py
@@ -20,6 +20,7 @@ Python 3.9+
 │  └─ ...
 └─data
     │  ...
+ ```
 
 ## How to run the codec
 ### For intra optimization
