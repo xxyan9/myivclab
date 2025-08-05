@@ -4,6 +4,9 @@ import numpy as np
 from ivclab.utils import imread, calc_psnr
 import matplotlib.pyplot as plt
 from ivclab.signal import rgb2ycbcr, ycbcr2rgb
+from exercises.ch5.halfpel import VideoCodec as Halfpel
+from exercises.ch5.quarterpel import VideoCodec as Quarterpel
+from exercises.ch5.fastmotion import VideoCodec as Fastmotion
 import deblock
 
 lena_small = imread('../data/lena_small.tif')
@@ -152,7 +155,7 @@ ch5_aquant_bpps = np.array(all_bpps)
 ch5_aquant_psnrs = np.array(all_psnrs)
 np.save('../data/ch5_aquant_bpps.npy', ch5_aquant_bpps)
 np.save('../data/ch5_aquant_psnrs.npy', ch5_aquant_psnrs)
-'''
+
 
 # 5. Block Mode Decision
 images = []
@@ -193,7 +196,96 @@ np.save('../data/ch5_mdecision_bpps.npy', ch5_mdecision_bpps)
 np.save('../data/ch5_mdecision_psnrs.npy', ch5_mdecision_psnrs)
 
 # 6. Half pel motion compensation
+images = []
+for i in range(20, 40 + 1):
+    images.append(imread(f'../data/foreman20_40_RGB/foreman00{i}.bmp'))
+
+all_bpps = list()
+all_PSNRs = list()
+for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
+    video_codec = Halfpel(quantization_scale=q_scale, use_half_pel=True)
+    video_codec.intra_codec.train_huffman_from_image(lena_small, is_source_rgb=True)
+    bpps = list()
+    psnrs = list()
+    for frame_num, image in enumerate(images):
+        reconstructed_image, bitstream, bitsize = video_codec.encode_decode(image, frame_num=frame_num)
+        bpp = bitsize / (image.size / 3)
+        psnr = calc_psnr(image, reconstructed_image)
+        print(f"Frame:{frame_num} PSNR: {psnr:.2f} dB bpp: {bpp:.2f}")
+        bpps.append(bpp)
+        psnrs.append(psnr)
+
+    all_bpps.append(np.mean(bpps))
+    all_PSNRs.append(np.mean(psnrs))
+    print(f"Q-Scale {q_scale}, Average PSNR: {np.mean(psnrs):.2f} dB Average bpp: {np.mean(bpps):.2f}")
+    print('-' * 12)
+
+ch5_halfpel_bpps = np.array(all_bpps)
+ch5_halfpel_psnrs = np.array(all_PSNRs)
+np.save('../data/ch5_halfpel_bpps.npy', ch5_halfpel_bpps)
+np.save('../data/ch5_halfpel_psnrs.npy', ch5_halfpel_psnrs)
 # 7. Quarter pel motion compensation
+images = []
+for i in range(20, 40 + 1):
+    images.append(imread(f'../data/foreman20_40_RGB/foreman00{i}.bmp'))
+
+all_bpps = list()
+all_PSNRs = list()
+for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
+    video_codec = Quarterpel(quantization_scale=q_scale, use_quarter_pel=True)
+    video_codec.intra_codec.train_huffman_from_image(lena_small, is_source_rgb=True)
+    bpps = list()
+    psnrs = list()
+    for frame_num, image in enumerate(images):
+        reconstructed_image, bitstream, bitsize = video_codec.encode_decode(image, frame_num=frame_num)
+        bpp = bitsize / (image.size / 3)
+        psnr = calc_psnr(image, reconstructed_image)
+        print(f"Frame:{frame_num} PSNR: {psnr:.2f} dB bpp: {bpp:.2f}")
+        bpps.append(bpp)
+        psnrs.append(psnr)
+
+    all_bpps.append(np.mean(bpps))
+    all_PSNRs.append(np.mean(psnrs))
+    print(f"Q-Scale {q_scale}, Average PSNR: {np.mean(psnrs):.2f} dB Average bpp: {np.mean(bpps):.2f}")
+ch5_quarterpel_bpps = np.array(all_bpps)
+ch5_quarterpel_psnrs = np.array(all_PSNRs)
+
+np.save('../data/ch5_quarterpel_bpps.npy', ch5_quarterpel_bpps)
+np.save('../data/ch5_quarterpel_psnrs.npy', ch5_quarterpel_psnrs)
+
+# 8. Fast Motion Estimation
+images = []
+for i in range(20, 40 + 1):
+    images.append(imread(f'../data/foreman20_40_RGB/foreman00{i}.bmp'))
+
+all_bpps = list()
+all_psnrs = list()
+
+for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
+    video_codec = Fastmotion(quantization_scale=q_scale, use_three_step = True)
+    video_codec.intra_codec.train_huffman_from_image(lena_small, is_source_rgb=True)
+    bpps = list()
+    psnrs = list()
+    for frame_num, image in enumerate(images):
+        reconstructed_image, bitstream, bitsize = video_codec.encode_decode(image, frame_num=frame_num)
+        bpp = bitsize / (image.size / 3)
+        psnr = calc_psnr(image, reconstructed_image)
+        print(f"Frame:{frame_num} PSNR: {psnr:.2f} dB bpp: {bpp:.2f}")
+        bpps.append(bpp)
+        psnrs.append(psnr)
+
+    all_bpps.append(np.mean(bpps))
+    all_psnrs.append(np.mean(psnrs))
+    print(f"Q-Scale {q_scale}, Average PSNR: {np.mean(psnrs):.2f} dB Average bpp: {np.mean(bpps):.2f}")
+    print('-' * 12)
+
+ch5_fast_bpps = np.array(all_bpps)
+ch5_fast_psnrs = np.array(all_psnrs)
+
+np.save('../data/ch5_fast_bpps.npy', ch5_fast_bpps)
+np.save('../data/ch5_fast_psnrs.npy', ch5_fast_psnrs)
+
+'''
 
 ch3_bpps = np.load('../data/ch3_bpps.npy')
 ch3_psnrs = np.load('../data/ch3_psnrs.npy')
@@ -207,24 +299,52 @@ ch5_mdecision_bpps = np.load('../data/ch5_mdecision_bpps.npy')
 ch5_mdecision_psnrs = np.load('../data/ch5_mdecision_psnrs.npy')
 ch5_halfpel_bpps = np.load('../data/ch5_halfpel_bpps.npy')
 ch5_halfpel_psnrs = np.load('../data/ch5_halfpel_psnrs.npy')
-# ch5_quarterpel_bpps = np.load('../data/ch5_quarterpel_bpps.npy')
-# ch5_quarterpel_psnrs = np.load('../data/ch5_quarterpel_psnrs.npy')
+ch5_quarterpel_bpps = np.load('../data/ch5_quarterpel_bpps.npy')
+ch5_quarterpel_psnrs = np.load('../data/ch5_quarterpel_psnrs.npy')
+ch5_fast_bpps = np.load('../data/ch5_fast_bpps.npy')
+ch5_fast_psnrs = np.load('../data/ch5_fast_psnrs.npy')
 
-plt.figure()
-plt.xlabel('Bitrate (bpp)')
-plt.ylabel('PSNR [dB]')
-plt.title('Rate-Distortion Curve')
-plt.plot(ch3_bpps, ch3_psnrs, linestyle='--', marker='+', color='orange', label='Image Codec Solution')
-plt.plot(ch4_bpps, ch4_psnrs, linestyle='--', marker='v', color='blue', label='Video Codec Solution')
-# plt.plot(ch5_deblock_bpps, ch5_deblock_psnrs, linestyle='--', marker='x',
-#          color='green', label='Intra Opt: Post-deblocking')
-plt.plot(ch5_aquant_bpps, ch5_aquant_psnrs, linestyle='--', marker='.',
-         color='purple', label='Intra Opt: Adaptive quantize')
-plt.plot(ch5_mdecision_bpps, ch5_mdecision_psnrs, linestyle='--', marker='>',
-         color='black', label='Video Opt: Block mode decision')
-plt.plot(ch5_halfpel_bpps, ch5_halfpel_psnrs, linestyle='--', marker='^',
-         color='red', label='Video Opt: Halfpel')
-# plt.plot(ch5_quarterpel_bpps, ch5_quarterpel_psnrs, linestyle='--', marker='s',
-#          color='yellow', label='Video Opt: Quarterfpel')
-plt.legend()
+#plt.figure()
+#plt.xlabel('Bitrate (bpp)')
+#plt.ylabel('PSNR [dB]')
+#plt.title('Rate-Distortion Curve')
+#plt.plot(ch3_bpps, ch3_psnrs, linestyle='--', marker='*', color='black', label='Image Codec Solution')
+#plt.plot(ch4_bpps, ch4_psnrs, linestyle='--', marker='o', color='black', label='Video Codec Solution')
+#plt.plot(ch5_deblock_bpps, ch5_deblock_psnrs, linestyle='--', marker='*',color='cyan', label='Intra Opt: Post-deblocking')
+#plt.plot(ch5_aquant_bpps, ch5_aquant_psnrs, linestyle='--', marker='*',color='green', label='Intra Opt: Adaptive quantize')
+#plt.plot(ch5_mdecision_bpps, ch5_mdecision_psnrs, linestyle='--', marker='*',color='orange', label='Video Opt: Block mode decision')
+#plt.plot(ch5_halfpel_bpps, ch5_halfpel_psnrs, linestyle='--', marker='o',color='red', label='Video Opt: Halfpel')
+#plt.plot(ch5_quarterpel_bpps, ch5_quarterpel_psnrs, linestyle='--', marker='o',color='blue', label='Video Opt: Quarterfpel')
+#plt.plot(ch5_fast_bpps, ch5_fast_psnrs, linestyle='--', marker='o',color='purple', label='Video Opt: Fastmotion')
+#plt.legend()
+#plt.show()
+
+# 创建并排的两个子图
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+
+# 第一张图：Image Codec相关
+ax1.plot(ch3_bpps, ch3_psnrs, linestyle='-', marker='o',markerfacecolor='none', markeredgecolor='black', markeredgewidth=2,markersize=8,color='black', label='Image Codec Solution')
+ax1.plot(ch5_deblock_bpps, ch5_deblock_psnrs, linestyle='--', marker='o',markerfacecolor='none', markeredgecolor='red', color='red', label='Intra Opt: Post-deblocking')
+ax1.plot(ch5_aquant_bpps, ch5_aquant_psnrs, linestyle='--', marker='o',markerfacecolor='none', markeredgecolor='blue', color='blue', label='Intra Opt: Adaptive quantize')
+
+ax1.set_xlabel('Bitrate (bpp)')
+ax1.set_ylabel('PSNR [dB]')
+ax1.set_title('Intra Coding Optimization')
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+
+# 第二张图：Video Codec相关
+ax2.plot(ch4_bpps, ch4_psnrs, linestyle='--', marker='o', color='black', label='Video Codec Solution')
+ax2.plot(ch5_mdecision_bpps, ch5_mdecision_psnrs, linestyle='--', marker='o', color='orange', label='Video Opt: Block mode decision')
+ax2.plot(ch5_halfpel_bpps, ch5_halfpel_psnrs, linestyle='--', marker='o', color='red', label='Video Opt: Halfpel')
+ax2.plot(ch5_quarterpel_bpps, ch5_quarterpel_psnrs, linestyle='--', marker='o', color='blue', label='Video Opt: Quarterpel')
+ax2.plot(ch5_fast_bpps, ch5_fast_psnrs, linestyle='--', marker='o', color='purple', label='Video Opt: Fastmotion')
+
+ax2.set_xlabel('Bitrate (bpp)')
+ax2.set_ylabel('PSNR [dB]')
+ax2.set_title('Video Coding Optimization')
+ax2.legend()
+ax2.grid(True, alpha=0.3)
+
+plt.tight_layout()
 plt.show()
