@@ -106,7 +106,6 @@ class IntraCodec:
     def residual2symbols(self, block_residual, q_scale):
         # Step 1: Quantize
         qstep = 12 * q_scale + 3
-        # quantized = np.clip(np.round(block_residual / qstep), -63, 63).astype(np.int32)
         quantized = np.round(block_residual / qstep).astype(np.int32)
         # Step 2: Offset to non-negative range
         offset = 100  # to keep symbols >= 0

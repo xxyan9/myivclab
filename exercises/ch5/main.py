@@ -284,7 +284,6 @@ ch5_fast_psnrs = np.array(all_psnrs)
 
 np.save('../data/ch5_fast_bpps.npy', ch5_fast_bpps)
 np.save('../data/ch5_fast_psnrs.npy', ch5_fast_psnrs)
-
 '''
 
 ch3_bpps = np.load('../data/ch3_bpps.npy')
@@ -304,25 +303,11 @@ ch5_quarterpel_psnrs = np.load('../data/ch5_quarterpel_psnrs.npy')
 ch5_fast_bpps = np.load('../data/ch5_fast_bpps.npy')
 ch5_fast_psnrs = np.load('../data/ch5_fast_psnrs.npy')
 
-#plt.figure()
-#plt.xlabel('Bitrate (bpp)')
-#plt.ylabel('PSNR [dB]')
-#plt.title('Rate-Distortion Curve')
-#plt.plot(ch3_bpps, ch3_psnrs, linestyle='--', marker='*', color='black', label='Image Codec Solution')
-#plt.plot(ch4_bpps, ch4_psnrs, linestyle='--', marker='o', color='black', label='Video Codec Solution')
-#plt.plot(ch5_deblock_bpps, ch5_deblock_psnrs, linestyle='--', marker='*',color='cyan', label='Intra Opt: Post-deblocking')
-#plt.plot(ch5_aquant_bpps, ch5_aquant_psnrs, linestyle='--', marker='*',color='green', label='Intra Opt: Adaptive quantize')
-#plt.plot(ch5_mdecision_bpps, ch5_mdecision_psnrs, linestyle='--', marker='*',color='orange', label='Video Opt: Block mode decision')
-#plt.plot(ch5_halfpel_bpps, ch5_halfpel_psnrs, linestyle='--', marker='o',color='red', label='Video Opt: Halfpel')
-#plt.plot(ch5_quarterpel_bpps, ch5_quarterpel_psnrs, linestyle='--', marker='o',color='blue', label='Video Opt: Quarterfpel')
-#plt.plot(ch5_fast_bpps, ch5_fast_psnrs, linestyle='--', marker='o',color='purple', label='Video Opt: Fastmotion')
-#plt.legend()
-#plt.show()
 
-# 创建并排的两个子图
+# Plot
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
-# 第一张图：Image Codec相关
+# Figure 1：Image Codec
 ax1.plot(ch3_bpps, ch3_psnrs, linestyle='-', marker='o',markerfacecolor='none', markeredgecolor='black', markeredgewidth=2,markersize=8,color='black', label='Image Codec Solution')
 ax1.plot(ch5_deblock_bpps, ch5_deblock_psnrs, linestyle='--', marker='o',markerfacecolor='none', markeredgecolor='red', color='red', label='Intra Opt: Post-deblocking')
 ax1.plot(ch5_aquant_bpps, ch5_aquant_psnrs, linestyle='--', marker='o',markerfacecolor='none', markeredgecolor='blue', color='blue', label='Intra Opt: Adaptive quantize')
@@ -333,7 +318,7 @@ ax1.set_title('Intra Coding Optimization')
 ax1.legend()
 ax1.grid(True, alpha=0.3)
 
-# 第二张图：Video Codec相关
+# Figure 2：Video Codec
 ax2.plot(ch4_bpps, ch4_psnrs, linestyle='--', marker='o', color='black', label='Video Codec Solution')
 ax2.plot(ch5_mdecision_bpps, ch5_mdecision_psnrs, linestyle='--', marker='o', color='orange', label='Video Opt: Block mode decision')
 ax2.plot(ch5_halfpel_bpps, ch5_halfpel_psnrs, linestyle='--', marker='o', color='red', label='Video Opt: Halfpel')

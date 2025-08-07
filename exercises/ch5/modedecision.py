@@ -12,22 +12,21 @@ def mv_index_to_offset(index):
 
 def block_mode_decision(
         curr_ycbcr, ref_ycbcr, motion_comp, motion_huffman,
-        q_scale, intra_codec, residual_codec, base_lambda=0.8):
+        q_scale, intra_codec, residual_codec):
     H, W, C = curr_ycbcr.shape
     recon_ycbcr = np.zeros_like(curr_ycbcr)
     total_bits = 0
-    total_blocks = (H // 8) * (W // 8)
     skip_count = inter_count = intra_count = 0
     if q_scale < 0.1:
-        lambda_rd = base_lambda * (q_scale ** 1.8)
+        lambda_rd = 0.006
     elif q_scale < 0.3:
-        lambda_rd = base_lambda * (q_scale ** 2.2)
+        lambda_rd = 0.023
     elif q_scale < 0.6:
-        lambda_rd = base_lambda * (q_scale ** 3.3)
-    elif q_scale < 0.9:
-        lambda_rd = base_lambda * (q_scale ** 17)
+        lambda_rd = 0.039
+    elif q_scale < 1:
+        lambda_rd = 0.045
     else:
-        lambda_rd = base_lambda * (q_scale ** 3.8)
+        lambda_rd = 0.057 * (q_scale ** 2.3)
 
     for i in range(0, H, 8):
         for j in range(0, W, 8):
@@ -69,10 +68,6 @@ def block_mode_decision(
 
             dist2 = calc_mse(block_current, recon2)
             J2 = dist2 + lambda_rd * bits2
-            # if q_scale > 0.6:
-            #     J2 = dist2 + lambda_rd * (bits2 * 2)
-            # else:
-            #     J2 = dist2 + lambda_rd * bits2
 
             J_all = [J0, J1, J2]
             best_mode = np.argmin(J_all)
@@ -91,10 +86,7 @@ def block_mode_decision(
                 recon_ycbcr[i:i+8, j:j+8, :] = recon2
                 total_bits += bits2
                 intra_count += 1
-            # print(f"dist0={dist0:.2f}, J0={J0:.2f} | dist1={dist1:.2f}, bits1={residual_bitsize + mv_bitsize}, "
-            #       f"J1={J1:.2f} | dist2={dist2:.2f}, bits2={bits2:.2f}, J2={J2:.2f}")
 
-    print(f"Skip: {skip_count}, Inter: {inter_count}, Intra: {intra_count}")
     return recon_ycbcr, total_bits
 
 
@@ -113,8 +105,7 @@ if __name__ == "__main__":
     all_bpps = list()
     all_psnrs = list()
 
-    # for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
-    for q_scale in [0.07, 0.2, 0.4]:
+    for q_scale in [0.07, 0.2, 0.4, 0.8, 1.0, 1.5, 2, 3, 4, 4.5]:
         video_codec = VideoCodec(quantization_scale=q_scale)
         video_codec.intra_codec.train_huffman_from_image(lena_small)
         video_codec.use_mode_decision = True

@@ -20,7 +20,6 @@ def adaptive_quantize(dct_patches, q_map, quantizer):
     return quantized
 
 
-
 def adaptive_dequantize(quantized_patches, q_map, quantizer):
     """
     quantized_patches: ndarray of shape [H', W', C, 8, 8]
