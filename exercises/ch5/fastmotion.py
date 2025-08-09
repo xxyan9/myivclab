@@ -86,7 +86,7 @@ class ThreeStepMotionEstimator:
                     (curr_x + step_size, curr_y + step_size)
                 ]
 
-            # Find best candidate in this step
+            # Find the best candidate in this step
             step_min_sad = min_sad
             for dx, dy in candidates:
                 # Check if within search range

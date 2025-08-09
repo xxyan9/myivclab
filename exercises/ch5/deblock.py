@@ -30,10 +30,7 @@ class DeblockingFilter:
         ])
 
     def quantization_scale_to_qp(self, q_scale):
-        """
-        将量化尺度映射到QP索引
-        """
-        # 根据你的量化范围[0.07, 4.5]映射到[0, 51]
+        # Map the quantitative range [0.07, 4.5] to [0, 51].
         qp = int(np.clip(np.log2(q_scale) * 6 + 26, 0, 51))
         return qp
 
@@ -111,21 +108,19 @@ class IntraCodec:
                  bounds=(-1000, 4000),
                  end_of_block=4000,
                  block_shape=(8, 8),
-                 use_deblocking=True  # 新增参数
+                 use_deblocking=True  # new parameter
                  ):
 
         self.quantization_scale = quantization_scale
         self.bounds = bounds
         self.end_of_block = end_of_block
         self.block_shape = block_shape
-        self.use_deblocking = use_deblocking  # 是否使用去块滤波
+        self.use_deblocking = use_deblocking  # Use deblocking
 
-        # 原始IntraCodec
+        # original IntraCodec
         from ivclab.image import IntraCodec as OriginalIntraCodec
         self.intra_codec = OriginalIntraCodec(quantization_scale=quantization_scale, bounds=bounds,
                                               end_of_block=end_of_block, block_shape=block_shape)
-
-        # 去块滤波器
         if use_deblocking:
             self.deblocking_filter = DeblockingFilter(block_size=block_shape[0])
 
@@ -164,10 +159,10 @@ class IntraCodec:
         returns:
             reconstructed_img: np.array of shape [H, W, C]
         """
-        # 解码
+        # Decode
         reconstructed_img = self.intra_codec.intra_decode(bitstream, original_shape)
 
-        # 可选地应用去块滤波
+        # Apply decblocking
         if self.use_deblocking:
             qp_index = self.deblocking_filter.quantization_scale_to_qp(self.quantization_scale)
             reconstructed_img = self.deblocking_filter.deblock(reconstructed_img, qp_index)
